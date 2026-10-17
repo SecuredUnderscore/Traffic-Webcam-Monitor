@@ -74,7 +74,7 @@ export default function CameraForm({
       wide
       footer={
         <>
-          {error && <span className="small" style={{ color: "#fca5a5", marginRight: "auto" }}>{error}</span>}
+          {error && <span className="error-text" style={{ marginRight: "auto" }}>{error}</span>}
           <button className="btn ghost" onClick={onClose}>Cancel</button>
           <button className="btn primary" onClick={save} disabled={saving || !v.name.trim() || v.url.length < 8}>
             {saving && <Spinner size={14} />} {camera ? "Save changes" : "Add camera"}
@@ -82,8 +82,8 @@ export default function CameraForm({
         </>
       }
     >
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 340px", gap: 20 }}>
-        <div className="col" style={{ gap: 14 }}>
+      <div className="split split-aside-right">
+        <div className="col" style={{ gap: 16 }}>
           <Field label="Name">
             <input className="input" value={v.name} autoFocus placeholder="I-405 @ SR 167" onChange={(e) => set("name", e.target.value)} />
           </Field>
@@ -131,7 +131,7 @@ export default function CameraForm({
               {customInterval && <span className="muted small">sec</span>}
             </div>
           </Field>
-          <div className="row" style={{ gap: 20 }}>
+          <div className="row" style={{ gap: 24 }}>
             <label className="check">
               <Switch checked={v.enabled} onChange={(x) => set("enabled", x)} /> Monitoring enabled
             </label>
@@ -142,7 +142,7 @@ export default function CameraForm({
 
           <details>
             <summary className="label" style={{ cursor: "pointer" }}>Advanced: request headers & detector overrides</summary>
-            <div className="col" style={{ gap: 14, marginTop: 12 }}>
+            <div className="col" style={{ gap: 16, marginTop: 12 }}>
               <div className="field">
                 <label>HTTP headers</label>
                 <div className="hint">Some camera sites require a Referer or a browser User-Agent.</div>
@@ -214,7 +214,7 @@ export default function CameraForm({
           <div className="label">Preview</div>
           <div className="card" style={{ overflow: "hidden", minHeight: 200, display: "grid", placeItems: "center" }}>
             {probing && <Spinner />}
-            {!probing && !probe && <div className="muted small" style={{ padding: 20, textAlign: "center" }}>Press <b>Test</b> to fetch the image.</div>}
+            {!probing && !probe && <div className="muted small" style={{ padding: 24, textAlign: "center" }}>Press <b>Test</b> to fetch the image.</div>}
             {probe?.ok && <img src={probe.image} style={{ width: "100%", display: "block" }} alt="" />}
             {probe && !probe.ok && (
               <div className="callout err" style={{ margin: 12 }}>
@@ -223,7 +223,7 @@ export default function CameraForm({
             )}
           </div>
           {probe?.ok && (
-            <div className="row small" style={{ color: "#86efac" }}>
+            <div className="row small ok-text">
               <CheckCircle2 size={14} /> {probe.width}×{probe.height} · {((probe.bytes ?? 0) / 1024).toFixed(0)} KB
             </div>
           )}

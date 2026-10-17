@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Bell, Camera as CameraIcon, Clock, Plus, RefreshCw } from "lucide-react";
+import { AlertTriangle, Camera as CameraIcon, Plus, RefreshCw } from "lucide-react";
 import { api, snapshotUrl } from "../api";
 import type { Camera } from "../types";
 import SnapshotView from "../components/SnapshotView";
 import CameraForm from "../components/CameraForm";
-import { DensityChip, MotionChip, Spinner, StatusDot, useNow, useToast } from "../components/ui";
+import { DensityChip, MotionChip, Spinner, StatusBadge, useNow, useToast } from "../components/ui";
 import { fmtInterval, timeAgo, timeUntil } from "../util";
 
 function CameraCard({ cam, now }: { cam: Camera; now: number }) {
@@ -15,14 +15,14 @@ function CameraCard({ cam, now }: { cam: Camera; now: number }) {
   const [checking, setChecking] = useState(false);
   const results = Object.fromEntries(cam.zones.filter((z) => z.latest).map((z) => [z.id, z.latest!]));
   const rules = cam.zones.reduce((n, z) => n + z.rules.filter((r) => r.enabled).length, 0);
+  const zones = cam.zones.filter((z) => z.enabled);
 
-  const check = async (e: React.MouseEvent) => {
-    e.preventDefault();
+  const check = async () => {
     setChecking(true);
     try {
       const r = await api.checkNow(cam.id);
-      toast(r.result.status === "new" ? "New image analyzed" : r.result.status === "unchanged" ? "No new image yet" : `Error: ${r.result.error}`,
-        r.result.status === "error" ? "error" : "info");
+      const st = r.result.status;
+      toast(st === "new" ? "New image analyzed" : st === "unchanged" ? "No new image yet" : `Error: ${r.result.error}`, st === "error" ? "error" : "info");
       qc.invalidateQueries({ queryKey: ["cameras"] });
     } finally {
       setChecking(false);
@@ -31,57 +31,61 @@ function CameraCard({ cam, now }: { cam: Camera; now: number }) {
 
   return (
     <div className="card cam-card">
-      <Link to={`/cameras/${cam.id}`} className="cover">
+      <Link to={`/cameras/${cam.id}`} className="cover" aria-label={`Open ${cam.name}`}>
         <SnapshotView
           src={cam.latest ? snapshotUrl(cam.latest.id, cam.latest.sha) : null}
           width={cam.latest?.width ?? 640}
           height={cam.latest?.height ?? 480}
-          zones={cam.zones.filter((z) => z.enabled)}
+          zones={zones}
           results={results}
           detections={cam.latest?.detections}
           showLabels={false}
         />
-        <div className="overlay-pill">
-          <StatusDot status={cam.status} />
-          {cam.latest ? timeAgo(cam.latest.ts, now) : "no image"}
-        </div>
       </Link>
       <div className="meta">
         <div className="row">
-          <Link to={`/cameras/${cam.id}`} className="cam-title grow ellipsis" style={{ color: "inherit" }}>{cam.name}</Link>
-          <button className="btn sm icon ghost" title="Check now" onClick={check} disabled={checking}>
+          <Link to={`/cameras/${cam.id}`} className="cam-title grow ellipsis">{cam.name}</Link>
+          <StatusBadge status={cam.status} />
+          <button className="btn sm icon ghost" title="Check now" aria-label="Check now" onClick={check} disabled={checking}>
             {checking ? <Spinner size={14} /> : <RefreshCw size={14} />}
           </button>
         </div>
+
         {cam.zones.length === 0 ? (
-          <div className="small muted">No zones yet. <Link to={`/cameras/${cam.id}`}>Draw zones</Link> to start detecting traffic changes.</div>
+          <p className="small muted">No zones yet. <Link to={`/cameras/${cam.id}`}>Draw zones</Link> to start detecting changes.</p>
+        ) : zones.length === 0 ? (
+          <p className="small muted">{cam.zones.length === 1 ? "Its zone is" : `All ${cam.zones.length} zones are`} switched off.</p>
         ) : (
-          <div className="col" style={{ gap: 6 }}>
-            {cam.zones.filter((z) => z.enabled).map((z) => (
+          <div className="zone-rows">
+            {zones.map((z) => (
               <div key={z.id} className="zone-line">
                 <span className="zone-swatch" style={{ background: z.color }} />
-                <span className="ellipsis" style={{ maxWidth: 150, fontWeight: 500 }}>{z.name}</span>
+                <span className="ellipsis">{z.name}</span>
                 {z.latest ? (
                   <>
-                    <span className="muted small mono">{z.metric === "count" ? `${z.latest.count} veh` : `${(z.latest.activity ?? 0).toFixed(1)}%`}</span>
+                    <span className="mono muted">{z.metric === "count" ? `${z.latest.count} veh` : `${(z.latest.activity ?? 0).toFixed(1)}%`}</span>
                     <DensityChip value={z.latest.density} />
                     <MotionChip value={z.latest.motion} hideNone />
                   </>
                 ) : (
-                  <span className="muted small">waiting for scan</span>
+                  <span className="small muted" style={{ gridColumn: "span 3" }}>Waiting for scan</span>
                 )}
               </div>
             ))}
           </div>
         )}
-        <div className="row small muted" style={{ gap: 14 }}>
-          <span className="row" style={{ gap: 4 }}><Clock size={12} /> every {fmtInterval(cam.interval_sec)}</span>
-          {cam.enabled && <span>next {timeUntil(cam.next_check_at, now)}</span>}
-          <span className="row" style={{ gap: 4 }}><Bell size={12} /> {rules} rule{rules === 1 ? "" : "s"}</span>
-        </div>
+
         {cam.last_error && cam.status === "error" && (
           <div className="callout err small"><AlertTriangle size={14} /> {cam.last_error}</div>
         )}
+
+        <div className="cam-foot">
+          <span>Image {cam.latest ? timeAgo(cam.latest.ts, now) : "none yet"}</span>
+          <span>Every {fmtInterval(cam.interval_sec)}</span>
+          {cam.enabled && <span>Next in {timeUntil(cam.next_check_at, now)}</span>}
+          <span className="spacer" />
+          <span>{rules} rule{rules === 1 ? "" : "s"}</span>
+        </div>
       </div>
     </div>
   );
@@ -93,7 +97,7 @@ export default function Dashboard() {
   const now = useNow(1000);
   const [adding, setAdding] = useState(false);
   const cams = useQuery({ queryKey: ["cameras"], queryFn: api.cameras, refetchInterval: 10000 });
-
+  const total = cams.data?.length ?? 0;
   const live = cams.data?.filter((c) => c.status === "ok").length ?? 0;
 
   return (
@@ -101,9 +105,7 @@ export default function Dashboard() {
       <div className="page-head">
         <div className="grow">
           <h1>Cameras</h1>
-          {cams.data && cams.data.length > 0 && (
-            <div className="sub">{live} of {cams.data.length} live · alerts fire when a zone's traffic changes between scans</div>
-          )}
+          {total > 0 && <div className="sub">{live} of {total} live</div>}
         </div>
         <button className="btn primary" onClick={() => setAdding(true)}><Plus size={16} /> Add camera</button>
       </div>
@@ -111,12 +113,9 @@ export default function Dashboard() {
       {cams.isLoading && <Spinner />}
       {cams.data?.length === 0 && (
         <div className="card empty-state">
-          <div className="big-icon"><CameraIcon size={30} /></div>
-          <h2>Add your first traffic camera</h2>
-          <p className="muted" style={{ maxWidth: 520, margin: "8px auto 20px" }}>
-            Paste a link to a public traffic-camera still image. TrafficWatch checks it on your schedule, finds the vehicles,
-            and alerts you on Discord or Pushover when traffic in a direction changes, e.g. a closed lane reopening or stopped traffic starting to move.
-          </p>
+          <CameraIcon size={20} />
+          <h2>No cameras yet</h2>
+          <p>Add a link to a traffic camera's still image. TrafficWatch checks it on your schedule and alerts you when traffic in a zone changes.</p>
           <button className="btn primary" onClick={() => setAdding(true)}><Plus size={16} /> Add camera</button>
         </div>
       )}

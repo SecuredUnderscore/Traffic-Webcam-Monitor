@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
-import { Loader2, X } from "lucide-react";
+import { AlertTriangle, Clock, Loader2, Pause, Video, X } from "lucide-react";
 import type { CameraStatus } from "../types";
 import { cx, DENSITY_LABEL, MOTION_LABEL } from "../util";
 
@@ -84,17 +84,31 @@ export function MotionChip({ value, hideNone }: { value: string | null | undefin
 
 const STATUS_TEXT: Record<CameraStatus, string> = {
   ok: "Live",
-  stale: "Image not updating",
+  stale: "Not updating",
   error: "Fetch errors",
   paused: "Paused",
-  pending: "Waiting for first image",
+  pending: "Waiting for image",
+};
+const STATUS_TONE: Record<CameraStatus, string> = {
+  ok: "tone-ok",
+  stale: "tone-warn",
+  error: "tone-danger",
+  paused: "",
+  pending: "tone-primary",
 };
 
-export function StatusDot({ status, withText }: { status: CameraStatus; withText?: boolean }) {
+/** Camera status as a small text badge. */
+export function StatusBadge({ status }: { status: CameraStatus }) {
+  return <span className={cx("chip", STATUS_TONE[status])}>{STATUS_TEXT[status]}</span>;
+}
+
+/** Compact status for tight spots (sidebar): an icon only when something needs attention. */
+export function StatusIcon({ status }: { status: CameraStatus }) {
+  const Icon = status === "error" ? AlertTriangle : status === "stale" ? Clock : status === "paused" ? Pause : Video;
+  const color = status === "error" ? "var(--danger)" : status === "stale" ? "var(--warn)" : "var(--text-muted)";
   return (
-    <span className="row" style={{ gap: 7 }} title={STATUS_TEXT[status]}>
-      <span className={cx("status-dot", `st-${status}`)} />
-      {withText && <span className="small muted">{STATUS_TEXT[status]}</span>}
+    <span className="status-icon row" title={STATUS_TEXT[status]}>
+      <Icon size={14} color={color} aria-label={STATUS_TEXT[status]} />
     </span>
   );
 }

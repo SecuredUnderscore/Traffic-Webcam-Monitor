@@ -14,7 +14,7 @@ function Delivery({ d }: { d: Record<string, any> }) {
   return (
     <div className="row wrap">
       {entries.map(([k, v]) => (
-        <span key={k} className={cx("chip", v === "ok" ? "m-moving" : k === "note" || String(v).startsWith("off") ? "" : "m-stopped")} title={String(v)}>
+        <span key={k} className={cx("chip", v === "ok" ? "tone-ok" : k === "note" || String(v).startsWith("off") ? "" : "tone-danger")} title={String(v)}>
           {k === "note" ? String(v) : `${k}: ${v === "ok" ? "sent" : String(v).startsWith("off") ? "off" : "failed"}`}
         </span>
       ))}
@@ -29,28 +29,28 @@ function EventCard({ e, focus, now }: { e: TrafficEvent; focus: boolean; now: nu
     qc.invalidateQueries({ queryKey: ["unread"] });
   };
   return (
-    <div id={`event-${e.id}`} className={cx("card event-card", !e.acknowledged && "unread")} style={focus ? { outline: "2px solid var(--accent)" } : undefined}>
-      <div className="img-cell">
-        {e.prev_snapshot_id ? <img src={annotatedUrl(e.prev_snapshot_id, e.zone_id)} alt="" loading="lazy" /> : <div className="snap-placeholder">No previous scan</div>}
-        <div className="overlay-pill">Before</div>
-      </div>
-      <div className="img-cell">
-        {e.snapshot_id ? <img src={annotatedUrl(e.snapshot_id, e.zone_id)} alt="" loading="lazy" /> : <div className="snap-placeholder">No image</div>}
-        <div className="overlay-pill" style={{ color: "var(--accent)" }}>Now</div>
-      </div>
+    <div id={`event-${e.id}`} className={cx("card event-card", !e.acknowledged && "unread")} style={focus ? { outline: "2px solid var(--ring)" } : undefined}>
+      <figure>
+        <figcaption>Previous scan</figcaption>
+        {e.prev_snapshot_id ? <img src={annotatedUrl(e.prev_snapshot_id, e.zone_id)} alt="Previous scan" loading="lazy" /> : <div className="snap-placeholder">No previous scan</div>}
+      </figure>
+      <figure>
+        <figcaption>Triggering scan</figcaption>
+        {e.snapshot_id ? <img src={annotatedUrl(e.snapshot_id, e.zone_id)} alt="Scan that triggered the alert" loading="lazy" /> : <div className="snap-placeholder">No image</div>}
+      </figure>
       <div className="info">
         <div className="small muted">{fmtTime(e.ts)} · {timeAgo(e.ts, now)}</div>
-        <div style={{ fontWeight: 600, fontSize: 15 }}>{e.title}</div>
-        <div className="small" style={{ color: "var(--text-2)" }}>{e.message}</div>
+        <h3>{e.title}</h3>
+        <p className="small muted">{e.message}</p>
         <Delivery d={e.delivery} />
         <div className="spacer" />
         <div className="row">
           <Link to={`/cameras/${e.camera_id}`} className="btn sm">Open camera</Link>
           <span className="spacer" />
           {!e.acknowledged && (
-            <button className="btn sm" onClick={async () => { await api.ack(e.id); refresh(); }}><Check size={13} /> Mark seen</button>
+            <button className="btn sm" onClick={async () => { await api.ack(e.id); refresh(); }}><Check size={14} /> Mark seen</button>
           )}
-          <button className="btn sm icon ghost" title="Delete" onClick={async () => { await api.deleteEvent(e.id); refresh(); }}><Trash2 size={13} /></button>
+          <button className="btn sm icon ghost" title="Delete" onClick={async () => { await api.deleteEvent(e.id); refresh(); }}><Trash2 size={14} /></button>
         </div>
       </div>
     </div>
@@ -75,25 +75,25 @@ export default function EventsPage() {
       <div className="page-head">
         <div className="grow">
           <h1>Alerts</h1>
-          <div className="sub">Every rule trigger, with the scan before and the scan that triggered it.</div>
+          {!!events.data?.length && <div className="sub">{events.data.length} alert{events.data.length === 1 ? "" : "s"}</div>}
         </div>
         <select className="select" style={{ width: 220 }} value={cameraId ?? ""} onChange={(e) => setCameraId(e.target.value ? Number(e.target.value) : undefined)}>
           <option value="">All cameras</option>
           {cams.data?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
         <button className="btn" onClick={async () => { await api.ackAll(); qc.invalidateQueries({ queryKey: ["events"] }); qc.invalidateQueries({ queryKey: ["unread"] }); }}>
-          <CheckCheck size={15} /> Mark all seen
+          <CheckCheck size={16} /> Mark all seen
         </button>
       </div>
       {events.isLoading && <Spinner />}
       {events.data?.length === 0 && (
         <div className="card empty-state">
-          <div className="big-icon"><BellOff size={28} /></div>
+          <BellOff size={20} />
           <h2>No alerts yet</h2>
-          <p className="muted">When a zone's rule triggers, the alert shows up here and on Discord/Pushover.</p>
+          <p>Alerts appear here when a zone rule triggers, and are also sent to Discord or Pushover if enabled.</p>
         </div>
       )}
-      <div className="col" style={{ gap: 14 }}>
+      <div className="col" style={{ gap: 16 }}>
         {events.data?.map((e) => <EventCard key={e.id} e={e} focus={focus === e.id} now={now} />)}
       </div>
     </div>

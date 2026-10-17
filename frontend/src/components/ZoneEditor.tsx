@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Detection, Point } from "../types";
 import SnapshotView, { pointsAttr, useRenderScale, type OverlayZone, type ZoneState } from "./SnapshotView";
-import { cx } from "../util";
+import { cx, DRAW_COLOR } from "../util";
 
 export type Tool = "select" | "rect" | "poly";
 
@@ -241,7 +241,7 @@ export default function ZoneEditor({
                 cx={p[0] * width}
                 cy={p[1] * height}
                 r={px(6)}
-                fill="#0b1220"
+                fill="#0d1117"
                 stroke={selected.color}
                 strokeWidth={px(2.5)}
                 style={{ cursor: "grab" }}
@@ -260,8 +260,8 @@ export default function ZoneEditor({
             y={Math.min(drag.start[1], drag.cur[1]) * height}
             width={Math.abs(drag.cur[0] - drag.start[0]) * width}
             height={Math.abs(drag.cur[1] - drag.start[1]) * height}
-            fill="rgba(56,189,248,0.15)"
-            stroke="#38bdf8"
+            fill="rgba(88,166,255,0.15)"
+            stroke={DRAW_COLOR}
             strokeWidth={px(2)}
             strokeDasharray={`${px(6)} ${px(4)}`}
           />
@@ -271,8 +271,8 @@ export default function ZoneEditor({
           <g pointerEvents="none">
             <polyline
               points={pointsAttr(cursor ? [...draft, cursor] : draft, width, height)}
-              fill="rgba(56,189,248,0.12)"
-              stroke="#38bdf8"
+              fill="rgba(88,166,255,0.12)"
+              stroke={DRAW_COLOR}
               strokeWidth={px(2)}
               strokeDasharray={`${px(6)} ${px(4)}`}
             />
@@ -282,8 +282,8 @@ export default function ZoneEditor({
                 cx={p[0] * width}
                 cy={p[1] * height}
                 r={px(i === 0 && draft.length >= 3 ? 8 : 4.5)}
-                fill={i === 0 ? "#38bdf8" : "#0b1220"}
-                stroke="#38bdf8"
+                fill={i === 0 ? DRAW_COLOR : "#0d1117"}
+                stroke={DRAW_COLOR}
                 strokeWidth={px(2)}
               />
             ))}

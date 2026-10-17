@@ -138,7 +138,7 @@ export default function RuleForm({
       onClose={onClose}
       footer={
         <>
-          {error && <span className="small" style={{ color: "#fca5a5", marginRight: "auto" }}>{error}</span>}
+          {error && <span className="error-text" style={{ marginRight: "auto" }}>{error}</span>}
           <button className="btn ghost" onClick={onClose}>Cancel</button>
           <button className="btn primary" onClick={save} disabled={saving}>
             {saving && <Spinner size={14} />} Save rule
@@ -172,7 +172,7 @@ export default function RuleForm({
       </div>
 
       {isTransition ? (
-        <div className="card card-pad col" style={{ gap: 14, background: "var(--bg-2)" }}>
+        <div className="card card-pad col" style={{ gap: 16, background: "var(--bg-2)" }}>
           <div className="field">
             <label>When the zone was…</label>
             <StatePicker

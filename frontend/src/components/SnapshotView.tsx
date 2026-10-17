@@ -127,15 +127,19 @@ export default function SnapshotView({
         {showLabels &&
           zones.map((z) => {
             if (z.polygon.length < 3) return null;
-            const top = z.polygon.reduce((a, b) => (b[1] < a[1] ? b : a));
+            // Label the middle of the zone so it never runs off the image edge or onto a neighbour's label.
+            const cxN = z.polygon.reduce((a, p) => a + p[0], 0) / z.polygon.length;
+            const cyN = z.polygon.reduce((a, p) => a + p[1], 0) / z.polygon.length;
             const r = results?.[z.id];
             const text = r ? `${z.name} · ${r.count} · ${DENSITY_LABEL[r.density] ?? r.density}` : z.name;
+            const halfW = px(text.length * 3.6);
             return (
               <text
                 key={`l${z.id}`}
                 className="zone-label"
-                x={top[0] * width}
-                y={Math.max(px(16), top[1] * height - px(6))}
+                x={Math.min(width - halfW - px(4), Math.max(halfW + px(4), cxN * width))}
+                y={Math.min(height - px(6), Math.max(px(16), cyN * height))}
+                textAnchor="middle"
                 fontSize={px(13)}
                 strokeWidth={px(3)}
               >

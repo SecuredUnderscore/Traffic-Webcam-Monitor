@@ -18,7 +18,7 @@ import numpy as np
 from .analysis import DIFF_THRESHOLD, _light_hint, to_work, view_similarity, VIEW_SHIFT_THRESHOLD
 from .detector import Detection
 
-PALETTE = ["#38bdf8", "#f472b6", "#a3e635", "#fb923c", "#c084fc", "#facc15"]
+PALETTE = ["#58a6ff", "#f78166", "#3fb950", "#d29922", "#bc8cff", "#39c5cf"]
 
 
 def _polygon(contour: np.ndarray, w: int, h: int, max_pts: int = 12) -> list[list[float]]:

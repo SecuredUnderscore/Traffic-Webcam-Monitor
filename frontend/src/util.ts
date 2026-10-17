@@ -1,6 +1,7 @@
 import type { Density, Motion } from "./types";
 
-export const PALETTE = ["#38bdf8", "#f472b6", "#a3e635", "#fb923c", "#c084fc", "#facc15", "#2dd4bf", "#f87171"];
+// Zone colours: distinct on top of camera photos in both themes.
+export const PALETTE = ["#58a6ff", "#f78166", "#3fb950", "#d29922", "#bc8cff", "#39c5cf", "#ff7b72", "#e3b341"];
 
 export const DENSITY_LEVELS: Density[] = ["empty", "light", "moderate", "heavy"];
 export const MOTION_STATES: Motion[] = ["none", "stopped", "slow", "moving"];
@@ -10,7 +11,7 @@ export const DENSITY_LABEL: Record<string, string> = {
   light: "Light",
   moderate: "Moderate",
   heavy: "Heavy",
-  unknown: "Learning…",
+  unknown: "Learning",
 };
 export const MOTION_LABEL: Record<string, string> = {
   none: "No traffic",
@@ -20,12 +21,37 @@ export const MOTION_LABEL: Record<string, string> = {
   unknown: "Flow unknown",
 };
 export const DENSITY_COLOR: Record<string, string> = {
-  empty: "#64748b",
-  light: "#22c55e",
-  moderate: "#eab308",
-  heavy: "#ef4444",
-  unknown: "#94a3b8",
+  empty: "#8b949e",
+  light: "#3fb950",
+  moderate: "#d29922",
+  heavy: "#f85149",
+  unknown: "#8b949e",
 };
+export const MOTION_COLOR: Record<string, string> = { stopped: "#f85149", slow: "#db6d28", moving: "#3fb950" };
+
+/** Colour used for drawing tools on top of camera images (independent of theme). */
+export const DRAW_COLOR = "#58a6ff";
+
+export type Theme = "system" | "light" | "dark";
+
+export function getTheme(): Theme {
+  try {
+    const t = localStorage.getItem("tw-theme");
+    return t === "light" || t === "dark" ? t : "system";
+  } catch {
+    return "system";
+  }
+}
+
+export function applyTheme(t: Theme) {
+  if (t === "system") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme", t);
+  try {
+    localStorage.setItem("tw-theme", t);
+  } catch {
+    /* storage unavailable; theme still applies for this session */
+  }
+}
 
 export const DIRECTIONS = ["NB", "SB", "EB", "WB", "Inner loop", "Outer loop", "Toward camera", "Away from camera", "Ramp", "Express"];
 

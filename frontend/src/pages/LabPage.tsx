@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Cpu, FlaskConical, Info } from "lucide-react";
+import { AlertTriangle, Cpu, FlaskConical } from "lucide-react";
 import { api, snapshotUrl } from "../api";
 import type { LabResult } from "../types";
 import SnapshotView from "../components/SnapshotView";
@@ -57,13 +57,13 @@ export default function LabPage() {
       <div className="page-head">
         <div className="grow">
           <h1>Detector Lab</h1>
-          <div className="sub">Compare detection models, tiling and hardware on a real frame from your cameras.</div>
+          <div className="sub">Compare models, tiling and hardware on a camera frame</div>
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "340px minmax(0,1fr)", gap: 18, alignItems: "start" }}>
-        <div className="col" style={{ gap: 14 }}>
-          <div className="card card-pad col" style={{ gap: 14 }}>
+      <div className="split split-aside-left">
+        <div className="col" style={{ gap: 16 }}>
+          <div className="card card-pad col" style={{ gap: 16 }}>
             <Field label="Image">
               <select className="select" value={src} onChange={(e) => setSource(e.target.value)}>
                 {camsWithImage.map((c) => <option key={c.id} value={c.id}>{c.name} (latest scan)</option>)}
@@ -73,7 +73,7 @@ export default function LabPage() {
             {src === "url" && <input className="input mono" placeholder="https://…/camera.jpg" value={url} onChange={(e) => setUrl(e.target.value)} />}
             <div className="field">
               <label>Models</label>
-              <div className="col" style={{ gap: 6 }}>
+              <div className="col" style={{ gap: 8 }}>
                 {meta.data?.models.map((m) => (
                   <label key={m.id} className="check">
                     <input type="checkbox" checked={chosenModels.includes(m.id)} onChange={() => setModels(toggle(chosenModels, m.id))} />
@@ -103,30 +103,31 @@ export default function LabPage() {
               <input type="range" min={0.05} max={0.8} step={0.05} value={conf} onChange={(e) => setConf(Number(e.target.value))} />
             </Field>
             <button className="btn primary" onClick={run} disabled={running || !chosenModels.length || !grids.length || (src === "url" && url.length < 8)}>
-              {running ? <Spinner size={14} /> : <FlaskConical size={15} />} {running ? "Benchmarking…" : "Run benchmark"}
+              {running ? <Spinner size={14} /> : <FlaskConical size={16} />} {running ? "Benchmarking…" : "Run benchmark"}
             </button>
             {error && <div className="callout err"><AlertTriangle size={16} />{error}</div>}
           </div>
 
-          <div className="card card-pad col small" style={{ gap: 8, color: "var(--text-2)" }}>
-            <div className="row"><Cpu size={15} /><b>This machine</b></div>
-            <div className="mono">{meta.data?.cpu} · {meta.data?.cpu_count} threads</div>
-            <div className="callout"><Info size={15} /><div>
-              Cameras refresh every 5–20 minutes, so even 50 cameras need only a few detections per minute.
-              A modern CPU runs the small models in ~20–200 ms per frame, so <b>a GPU is not required</b>.
-              A GPU helps only with the largest models plus fine tiling, or many dozens of cameras.
-            </div></div>
+          <div className="card">
+            <div className="card-head"><Cpu size={16} /><h3>Hardware</h3></div>
+            <div className="card-body col small">
+              <div className="mono">{meta.data?.cpu} · {meta.data?.cpu_count} threads</div>
+              <p className="muted">
+                Cameras refresh every 5–20 minutes, so detection runs a few times per minute at most. Small models take
+                about 20–200 ms per frame on a modern CPU; a GPU only matters for the largest models with fine tiling.
+              </p>
+            </div>
           </div>
         </div>
 
-        <div className="col" style={{ gap: 14, minWidth: 0 }}>
+        <div className="col" style={{ gap: 16, minWidth: 0 }}>
           {!out && !running && (
             <div className="card empty-state">
-              <div className="big-icon"><FlaskConical size={28} /></div>
-              <h2>Pick an image and run a benchmark</h2>
-              <p className="muted" style={{ maxWidth: 520, margin: "8px auto" }}>
-                Each combination runs a warm-up plus 3 timed passes. Compare how many vehicles each finds against what you can see.
-                Tiling finds more small, distant vehicles at ~5× the cost.
+              <FlaskConical size={20} />
+              <h2>No results yet</h2>
+              <p>
+                Choose an image and models, then run the benchmark. Each combination gets a warm-up and 3 timed passes.
+                Tiling finds more small, distant vehicles at about 5× the time.
               </p>
             </div>
           )}
@@ -136,7 +137,7 @@ export default function LabPage() {
               <div className="card" style={{ overflow: "hidden" }}>
                 <SnapshotView src={imgSrc} width={out.image.width} height={out.image.height} detections={cur?.detections} />
               </div>
-              <div className="card">
+              <div className="card" style={{ overflowX: "auto" }}>
                 <table className="table">
                   <thead><tr><th>Model</th><th>Tiling</th><th>Device</th><th>Vehicles</th><th>Avg conf.</th><th style={{ width: "34%" }}>Time per frame (median)</th></tr></thead>
                   <tbody>
@@ -157,7 +158,7 @@ export default function LabPage() {
                     ))}
                   </tbody>
                 </table>
-                {out.results.filter((r) => r.error).map((r, i) => <div key={i} className="callout err" style={{ margin: 10 }}>{r.model} / {r.device}: {r.error}</div>)}
+                {out.results.filter((r) => r.error).map((r, i) => <div key={i} className="callout err" style={{ margin: 12 }}>{r.model} / {r.device}: {r.error}</div>)}
               </div>
             </>
           )}

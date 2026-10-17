@@ -85,7 +85,7 @@ class Zone(Base):
     camera_id: Mapped[int] = mapped_column(ForeignKey("cameras.id", ondelete="CASCADE"), index=True)
     name: Mapped[str] = mapped_column(String(120))
     direction: Mapped[str] = mapped_column(String(40), default="")
-    color: Mapped[str] = mapped_column(String(16), default="#38bdf8")
+    color: Mapped[str] = mapped_column(String(16), default="#58a6ff")
     # Polygon as [[x, y], ...] with coordinates normalised to 0..1.
     polygon: Mapped[list] = mapped_column(JSON)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)

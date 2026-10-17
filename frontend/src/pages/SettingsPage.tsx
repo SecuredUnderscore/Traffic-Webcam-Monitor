@@ -19,7 +19,7 @@ function Section({ icon, title, right, children }: { icon: React.ReactNode; titl
   return (
     <div className="card">
       <div className="card-head">{icon}<h3 className="grow">{title}</h3>{right}</div>
-      <div className="card-body col" style={{ gap: 14 }}>{children}</div>
+      <div className="card-body col" style={{ gap: 16 }}>{children}</div>
     </div>
   );
 }
@@ -84,9 +84,9 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="page" style={{ maxWidth: 980 }}>
+    <div className="page narrow">
       <div className="page-head">
-        <div className="grow"><h1>Settings</h1><div className="sub">Everything is stored in TrafficWatch's database. No config files or environment variables.</div></div>
+        <div className="grow"><h1>Settings</h1></div>
         <button className="btn primary" onClick={save} disabled={!dirty || saving}>{saving ? <Spinner size={14} /> : <Save size={15} />} Save</button>
       </div>
 

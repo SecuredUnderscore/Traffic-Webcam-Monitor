@@ -16,7 +16,7 @@ router = APIRouter(prefix="/api")
 class ZoneIn(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     direction: str = ""
-    color: str = "#38bdf8"
+    color: str = "#58a6ff"
     polygon: list[list[float]]
     enabled: bool = True
     metric: str = "count"

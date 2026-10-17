@@ -12,7 +12,7 @@ import SnapshotView from "../components/SnapshotView";
 import CameraForm, { cameraToInput } from "../components/CameraForm";
 import RuleForm, { describeRule } from "../components/RuleForm";
 import ZoneChart from "../components/ZoneChart";
-import { DensityChip, Field, Modal, MotionChip, Spinner, StatusDot, Switch, useNow, useToast } from "../components/ui";
+import { DensityChip, Field, Modal, MotionChip, Spinner, StatusBadge, Switch, useNow, useToast } from "../components/ui";
 import { cx, DIRECTIONS, fmtInterval, fmtTime, MOTION_LABEL, PALETTE, pct, timeAgo, timeUntil } from "../util";
 
 const toInput = (z: Zone): ZoneInput => ({
@@ -66,7 +66,7 @@ function SuggestModal({ cam, onClose, onAdd }: { cam: Camera; onClose: () => voi
           {zones.length === 0 ? (
             <div className="muted">No clear traffic regions yet. Let it collect more scans, or draw zones manually.</div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 300px", gap: 16 }}>
+            <div className="split split-aside-right">
               <SnapshotView
                 src={cam.latest ? snapshotUrl(cam.latest.id, cam.latest.sha) : null}
                 width={cam.latest?.width ?? 640}
@@ -211,7 +211,7 @@ function ZonePanel({
         <Switch checked={v.enabled} onChange={(en) => setV({ ...v, enabled: en })} title="Zone enabled" />
         <button className="btn sm icon ghost" title="Delete zone" onClick={onDelete}><Trash2 size={14} /></button>
       </div>
-      <div className="card-body col" style={{ gap: 14 }}>
+      <div className="card-body col" style={{ gap: 16 }}>
         {p && (
           <div className="col" style={{ gap: 8 }}>
             <div className="row wrap">
@@ -219,14 +219,15 @@ function ZonePanel({
               <MotionChip value={p.motion} />
               {p.light_hint && <span className="chip">Lights: {p.light_hint === "away" ? "taillights (away)" : "headlights (toward)"}</span>}
             </div>
-            <div className="metric-grid">
-              <div className="metric"><div className="v">{p.count}</div><div className="k">Vehicles</div></div>
-              <div className="metric"><div className="v">{pct(p.occupancy, 0)}</div><div className="k">Occupancy</div></div>
-              <div className="metric" title="Share of the zone that differs from the learned empty road"><div className="v">{pct(p.activity)}</div><div className="k">Activity</div></div>
-              <div className="metric" title="Share of the zone that changed since the previous scan"><div className="v">{pct(p.change, 0)}</div><div className="k">Changed</div></div>
-              <div className="metric" title="Share of vehicles still in the same spot as the previous scan"><div className="v">{p.stationary == null ? "—" : `${Math.round(p.stationary * 100)}%`}</div><div className="k">Stationary</div></div>
-              <div className="metric"><div className="v" style={{ fontSize: 13, paddingTop: 3 }}>{MOTION_LABEL[p.motion]}</div><div className="k">Flow</div></div>
-            </div>
+            <dl className="kv">
+              <dt>Vehicles</dt><dd>{p.count}</dd>
+              <dt>Flow</dt><dd>{MOTION_LABEL[p.motion]}</dd>
+              <dt title="Share of vehicles still in the same spot as the previous scan">Stationary</dt>
+              <dd>{p.stationary == null ? "—" : `${Math.round(p.stationary * 100)}%`}</dd>
+              <dt>Occupancy</dt><dd>{pct(p.occupancy, 0)}</dd>
+              <dt title="Share of the zone that differs from the learned empty road">Activity</dt><dd>{pct(p.activity)}</dd>
+              <dt title="Share of the zone that changed since the previous scan">Changed since last scan</dt><dd>{pct(p.change, 0)}</dd>
+            </dl>
           </div>
         )}
         <div className="form-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
@@ -240,8 +241,8 @@ function ZonePanel({
           <label>Color</label>
           <div className="row">
             {PALETTE.map((c) => (
-              <button key={c} onClick={() => setV({ ...v, color: c })} title={c}
-                style={{ width: 22, height: 22, borderRadius: 6, background: c, border: v.color === c ? "2px solid white" : "2px solid transparent", cursor: "pointer" }} />
+              <button key={c} onClick={() => setV({ ...v, color: c })} title={c} aria-label={`Colour ${c}`} aria-pressed={v.color === c}
+                style={{ width: 24, height: 24, borderRadius: 4, background: c, border: "2px solid", borderColor: v.color === c ? "var(--text)" : "transparent", cursor: "pointer" }} />
             ))}
           </div>
         </div>
@@ -261,12 +262,12 @@ function ZonePanel({
           <label>Level thresholds ({v.metric === "count" ? "vehicles" : "% of zone"}, upper bound of each)</label>
           <div className="row">
             {(["empty", "light", "moderate"] as const).map((k) => (
-              <div key={k} className="col grow" style={{ gap: 3 }}>
+              <div key={k} className="col grow" style={{ gap: 4 }}>
                 <span className={cx("small", `d-${k}`)} style={{ background: "none", border: 0 }}>{k}</span>
                 <input className="input sm" type="number" step={v.metric === "count" ? 1 : 0.5} min={0} value={t[k]} onChange={(e) => setT(k, Number(e.target.value))} />
               </div>
             ))}
-            <div className="col grow" style={{ gap: 3 }}>
+            <div className="col grow" style={{ gap: 4 }}>
               <span className="small d-heavy" style={{ background: "none", border: 0 }}>heavy</span>
               <div className="input sm muted" style={{ display: "flex", alignItems: "center" }}>&gt; {t.moderate}</div>
             </div>
@@ -374,9 +375,9 @@ export default function CameraPage() {
     <div className="page">
       <div className="page-head">
         <Link to="/" className="btn ghost icon"><ArrowLeft size={18} /></Link>
-        <div className="grow" style={{ minWidth: 0 }}>
-          <div className="row"><h1 className="ellipsis">{c.name}</h1><StatusDot status={c.status} withText /></div>
-          <div className="sub row wrap" style={{ gap: 14 }}>
+        <div className="grow">
+          <div className="row"><h1 className="ellipsis">{c.name}</h1><StatusBadge status={c.status} /></div>
+          <div className="sub row wrap" style={{ gap: 16 }}>
             <span>Checks every {fmtInterval(c.interval_sec)}</span>
             <span>New image {timeAgo(c.last_new_image_at, now)}</span>
             {c.enabled && <span>Next check in {timeUntil(c.next_check_at, now)}</span>}
@@ -400,7 +401,7 @@ export default function CameraPage() {
         </button>
       </div>
 
-      {c.last_error && <div className="callout err" style={{ marginBottom: 14 }}><AlertTriangle size={16} /> Last check failed: {c.last_error}</div>}
+      {c.last_error && <div className="callout err" style={{ marginBottom: 16 }}><AlertTriangle size={16} /> Last check failed: {c.last_error}</div>}
 
       <div className="camera-layout">
         <div className="col" style={{ gap: 12, minWidth: 0 }}>
@@ -456,7 +457,7 @@ export default function CameraPage() {
                 {snaps.data?.map((s) => (
                   <div key={s.id} className={cx("film", (viewSnap ?? c.latest?.id) === s.id && "on")} onClick={() => setViewSnap(s.id === c.latest?.id ? null : s.id)} title={`${s.vehicle_count} vehicles`}>
                     <img src={snapshotUrl(s.id, s.sha)} alt="" loading="lazy" />
-                    <div className="t">{fmtTime(s.ts)} · {s.vehicle_count}</div>
+                    <div className="t"><span>{fmtTime(s.ts)}</span><span>{s.vehicle_count} veh</span></div>
                   </div>
                 ))}
                 {snaps.data?.length === 0 && <div className="hint">No scans yet. Press “Check now”.</div>}
@@ -468,9 +469,9 @@ export default function CameraPage() {
         <div className="side-panel">
           <div className="card">
             <div className="card-head"><h3 className="grow">Zones</h3><span className="small muted">{c.zones.length}</span></div>
-            <div style={{ padding: 6 }}>
+            <div style={{ padding: 8 }}>
               {c.zones.length === 0 && (
-                <div className="hint" style={{ padding: 10 }}>
+                <div className="hint" style={{ padding: 12 }}>
                   Draw a <b>Box</b> or <b>Polygon</b> around each direction of traffic (e.g. NB lanes and SB lanes), or try <b>Auto-detect lanes</b>.
                 </div>
               )}
@@ -479,7 +480,7 @@ export default function CameraPage() {
                 return (
                   <div key={z.id} className={cx("zone-item", selected === z.id && "selected")} onClick={() => setSelected(z.id)} style={{ opacity: z.enabled ? 1 : 0.5 }}>
                     <span className="zone-swatch" style={{ background: z.color }} />
-                    <div className="grow" style={{ minWidth: 0 }}>
+                    <div className="grow">
                       <div className="ellipsis" style={{ fontWeight: 500 }}>{z.name} {z.direction && <span className="muted small">· {z.direction}</span>}</div>
                       <div className="small muted">{z.rules.length} rule{z.rules.length === 1 ? "" : "s"} · {z.metric === "count" ? "vehicle count" : "activity"}</div>
                     </div>

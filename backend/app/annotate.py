@@ -50,7 +50,7 @@ def render(
         pts = np.array([[p[0] * W, p[1] * H] for p in z["polygon"]], dtype=np.int32)
         if len(pts) < 3:
             continue
-        cv2.fillPoly(overlay, [pts], hex_to_bgr(z.get("color", "#38bdf8")))
+        cv2.fillPoly(overlay, [pts], hex_to_bgr(z.get("color", "#58a6ff")))
     img = cv2.addWeighted(overlay, 0.18, img, 0.82, 0)
 
     zone_of = {}
@@ -68,7 +68,7 @@ def render(
         pts = np.array([[p[0] * W, p[1] * H] for p in z["polygon"]], dtype=np.int32)
         if len(pts) < 3:
             continue
-        color = hex_to_bgr(z.get("color", "#38bdf8"))
+        color = hex_to_bgr(z.get("color", "#58a6ff"))
         thick = 4 if z["id"] == highlight_zone else 2
         cv2.polylines(img, [pts], True, color, thick, cv2.LINE_AA)
         r = results.get(z["id"])
