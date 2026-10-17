@@ -42,7 +42,7 @@ def snapshot_dict(snap: db.Snapshot | None, with_detections: bool = False) -> di
     if snap is None:
         return None
     d = {
-        "id": snap.id, "camera_id": snap.camera_id, "ts": iso(snap.ts), "width": snap.width, "height": snap.height,
+        "id": snap.id, "camera_id": snap.camera_id, "ts": iso(snap.ts), "sha": snap.sha[:12], "width": snap.width, "height": snap.height,
         "vehicle_count": len(snap.detections or []), "inference_ms": snap.inference_ms, "model_id": snap.model_id,
         "view_score": snap.view_score, "view_shift": snap.view_shift, "brightness": snap.brightness,
     }

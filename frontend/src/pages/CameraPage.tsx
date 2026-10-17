@@ -68,7 +68,7 @@ function SuggestModal({ cam, onClose, onAdd }: { cam: Camera; onClose: () => voi
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 300px", gap: 16 }}>
               <SnapshotView
-                src={cam.latest ? snapshotUrl(cam.latest.id) : null}
+                src={cam.latest ? snapshotUrl(cam.latest.id, cam.latest.sha) : null}
                 width={cam.latest?.width ?? 640}
                 height={cam.latest?.height ?? 480}
                 zones={zones.map((z, i) => ({ id: i, name: names[i] ?? z.name, color: z.color, polygon: z.polygon })).filter((z) => picked[z.id])}
@@ -428,7 +428,7 @@ export default function CameraPage() {
           )}
 
           <ZoneEditor
-            src={shown ? snapshotUrl(shown.id) : null}
+            src={shown ? snapshotUrl(shown.id, shown.sha) : null}
             width={shown?.width ?? 640}
             height={shown?.height ?? 480}
             zones={c.zones.filter((z) => z.enabled || z.id === selected)}
@@ -457,7 +457,7 @@ export default function CameraPage() {
               <div className="filmstrip">
                 {snaps.data?.map((s) => (
                   <div key={s.id} className={cx("film", (viewSnap ?? c.latest?.id) === s.id && "on")} onClick={() => setViewSnap(s.id === c.latest?.id ? null : s.id)} title={`${s.vehicle_count} vehicles`}>
-                    <img src={snapshotUrl(s.id)} alt="" loading="lazy" />
+                    <img src={snapshotUrl(s.id, s.sha)} alt="" loading="lazy" />
                     <div className="t">{fmtTime(s.ts)} · {s.vehicle_count}</div>
                     {s.view_shift && <AlertTriangle size={13} className="shift" color="#fde047" />}
                   </div>

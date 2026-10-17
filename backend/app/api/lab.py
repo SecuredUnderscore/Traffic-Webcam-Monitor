@@ -60,9 +60,9 @@ async def run(body: LabIn):
             snap = s.get(db.Snapshot, body.snapshot_id)
             if snap is None:
                 raise HTTPException(404, "Snapshot not found")
-            path = snap.path
+            path, sha = snap.path, snap.sha
         img = load_image(path)
-        image_ref = {"snapshot_id": body.snapshot_id}
+        image_ref = {"snapshot_id": body.snapshot_id, "sha": sha[:12]}
     elif body.url:
         res = await fetch(monitor.client, body.url)
         if res.status == "error":

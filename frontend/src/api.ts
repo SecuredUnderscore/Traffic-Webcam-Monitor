@@ -94,13 +94,14 @@ export const api = {
   deleteEvent: (id: number) => req<{ ok: boolean }>("DELETE", `/api/events/${id}`),
 
   lab: (body: { snapshot_id?: number; url?: string; models: string[]; grids: number[]; devices: string[]; conf: number; runs: number }) =>
-    req<{ image: { snapshot_id?: number; data_url?: string; width: number; height: number }; results: LabResult[] }>(
+    req<{ image: { snapshot_id?: number; sha?: string; data_url?: string; width: number; height: number }; results: LabResult[] }>(
       "POST",
       "/api/lab/run",
       body,
     ),
 };
 
-export const snapshotUrl = (id: number) => `/api/snapshots/${id}/image`;
+/** Pass the snapshot's sha so the URL is unique to that image content and safe to cache. */
+export const snapshotUrl = (id: number, sha?: string) => `/api/snapshots/${id}/image${sha ? `?v=${sha}` : ""}`;
 export const annotatedUrl = (id: number, zone?: number | null) =>
   `/api/snapshots/${id}/annotated${zone ? `?zone=${zone}` : ""}`;

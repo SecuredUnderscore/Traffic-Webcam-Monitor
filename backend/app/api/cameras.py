@@ -211,13 +211,16 @@ def get_snapshot(snap_id: int):
 
 
 @router.get("/snapshots/{snap_id}/image")
-def snapshot_image(snap_id: int):
+def snapshot_image(snap_id: int, v: str | None = None):
     with db.session() as s:
         snap = s.get(db.Snapshot, snap_id)
         if snap is None:
             raise HTTPException(404, "Snapshot not found")
-        path = snap.path
-    return FileResponse(path, media_type="image/jpeg", headers={"Cache-Control": "public, max-age=31536000, immutable"})
+        path, sha = snap.path, snap.sha
+    # Only a URL pinned to this exact image content (?v=<sha prefix>) may be cached forever.
+    pinned = v is not None and len(v) >= 8 and sha.startswith(v)
+    cache = "public, max-age=31536000, immutable" if pinned else "no-cache"
+    return FileResponse(path, media_type="image/jpeg", headers={"Cache-Control": cache})
 
 
 @router.get("/snapshots/{snap_id}/annotated")

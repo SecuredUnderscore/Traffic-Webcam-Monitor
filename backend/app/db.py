@@ -37,6 +37,11 @@ class Base(DeclarativeBase):
     pass
 
 
+# AUTOINCREMENT stops SQLite from handing out an id again after the highest row is
+# deleted. Reused ids are dangerous here: images are cached by snapshot id.
+NO_ID_REUSE = {"sqlite_autoincrement": True}
+
+
 class Setting(Base):
     __tablename__ = "settings"
     key: Mapped[str] = mapped_column(String(64), primary_key=True)
@@ -45,6 +50,7 @@ class Setting(Base):
 
 class Camera(Base):
     __tablename__ = "cameras"
+    __table_args__ = NO_ID_REUSE
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(200))
     url: Mapped[str] = mapped_column(Text)
@@ -74,6 +80,7 @@ class Camera(Base):
 
 class Zone(Base):
     __tablename__ = "zones"
+    __table_args__ = NO_ID_REUSE
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     camera_id: Mapped[int] = mapped_column(ForeignKey("cameras.id", ondelete="CASCADE"), index=True)
     name: Mapped[str] = mapped_column(String(120))
@@ -95,6 +102,7 @@ class Zone(Base):
 
 class Rule(Base):
     __tablename__ = "rules"
+    __table_args__ = NO_ID_REUSE
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     zone_id: Mapped[int] = mapped_column(ForeignKey("zones.id", ondelete="CASCADE"), index=True)
     name: Mapped[str] = mapped_column(String(160), default="")
@@ -110,6 +118,7 @@ class Rule(Base):
 
 class Snapshot(Base):
     __tablename__ = "snapshots"
+    __table_args__ = NO_ID_REUSE
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     camera_id: Mapped[int] = mapped_column(ForeignKey("cameras.id", ondelete="CASCADE"), index=True)
     ts: Mapped[datetime] = mapped_column(TZDateTime, default=utcnow, index=True)
@@ -127,6 +136,7 @@ class Snapshot(Base):
 
 class Observation(Base):
     __tablename__ = "observations"
+    __table_args__ = NO_ID_REUSE
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     snapshot_id: Mapped[int] = mapped_column(ForeignKey("snapshots.id", ondelete="CASCADE"), index=True)
     zone_id: Mapped[int] = mapped_column(ForeignKey("zones.id", ondelete="CASCADE"), index=True)
@@ -143,6 +153,7 @@ class Observation(Base):
 
 class Event(Base):
     __tablename__ = "events"
+    __table_args__ = NO_ID_REUSE
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     ts: Mapped[datetime] = mapped_column(TZDateTime, default=utcnow, index=True)
     camera_id: Mapped[int] = mapped_column(ForeignKey("cameras.id", ondelete="CASCADE"), index=True)
@@ -175,7 +186,36 @@ def init_db(path: Path | None = None) -> None:
         cur.close()
 
     Base.metadata.create_all(engine)
+    _migrate_autoincrement(engine)
     SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
+
+
+def _migrate_autoincrement(eng) -> None:
+    """Rebuild tables created before AUTOINCREMENT was enabled (v1.0.0 databases)."""
+    with eng.connect() as conn:
+        existing = dict(conn.exec_driver_sql("SELECT name, sql FROM sqlite_master WHERE type='table'").all())
+        todo = [t for t in Base.metadata.sorted_tables
+                if t.dialect_options["sqlite"]["autoincrement"] and "AUTOINCREMENT" not in (existing.get(t.name) or "AUTOINCREMENT")]
+        if not todo:
+            return
+        # FKs off and legacy rename so other tables' references aren't rewritten to the _old copy.
+        conn.exec_driver_sql("PRAGMA foreign_keys=OFF")
+        conn.exec_driver_sql("PRAGMA legacy_alter_table=ON")
+        try:
+            for t in todo:
+                for (idx,) in conn.exec_driver_sql(
+                    "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name=? AND sql IS NOT NULL", (t.name,)
+                ).all():
+                    conn.exec_driver_sql(f'DROP INDEX "{idx}"')
+                conn.exec_driver_sql(f'ALTER TABLE "{t.name}" RENAME TO "{t.name}_old"')
+                t.create(conn)
+                cols = ", ".join(f'"{c.name}"' for c in t.columns)
+                conn.exec_driver_sql(f'INSERT INTO "{t.name}" ({cols}) SELECT {cols} FROM "{t.name}_old"')
+                conn.exec_driver_sql(f'DROP TABLE "{t.name}_old"')
+            conn.commit()
+        finally:
+            conn.exec_driver_sql("PRAGMA legacy_alter_table=OFF")
+            conn.exec_driver_sql("PRAGMA foreign_keys=ON")
 
 
 def session():

@@ -33,7 +33,7 @@ function CameraCard({ cam, now }: { cam: Camera; now: number }) {
     <div className="card cam-card">
       <Link to={`/cameras/${cam.id}`} className="cover">
         <SnapshotView
-          src={cam.latest ? snapshotUrl(cam.latest.id) : null}
+          src={cam.latest ? snapshotUrl(cam.latest.id, cam.latest.sha) : null}
           width={cam.latest?.width ?? 640}
           height={cam.latest?.height ?? 480}
           zones={cam.zones.filter((z) => z.enabled)}

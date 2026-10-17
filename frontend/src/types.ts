@@ -65,6 +65,7 @@ export interface Snapshot {
   id: number;
   camera_id: number;
   ts: string;
+  sha: string;
   width: number;
   height: number;
   vehicle_count: number;

@@ -123,3 +123,22 @@ def test_enabled_camera_is_scheduled_and_scanned(client):
     assert latest and latest["vehicle_count"] == 4
     assert client.put(f"/api/cameras/{cid}", json={"name": "Auto", "url": "http://cam.test/b.jpg", "enabled": False}).status_code == 200
     client.delete(f"/api/cameras/{cid}")
+
+
+def test_ids_not_reused_after_delete_and_images_cache_safely(client):
+    """Deleting the newest camera must not let a new camera inherit its snapshot ids,
+    or the browser would show the old camera's cached image."""
+    queue_frame(50, cars=False)
+    a = client.post("/api/cameras", json={"name": "A", "url": "http://cam.test/a.jpg", "enabled": False}).json()
+    snap_a = client.post(f"/api/cameras/{a['id']}/check").json()["camera"]["latest"]
+    client.delete(f"/api/cameras/{a['id']}")
+    queue_frame(51, cars=True)
+    b = client.post("/api/cameras", json={"name": "B", "url": "http://cam.test/b.jpg", "enabled": False}).json()
+    snap_b = client.post(f"/api/cameras/{b['id']}/check").json()["camera"]["latest"]
+    assert b["id"] > a["id"] and snap_b["id"] > snap_a["id"]
+
+    pinned = client.get(f"/api/snapshots/{snap_b['id']}/image?v={snap_b['sha']}")
+    assert "immutable" in pinned.headers["cache-control"]
+    assert client.get(f"/api/snapshots/{snap_b['id']}/image").headers["cache-control"] == "no-cache"
+    assert client.get(f"/api/snapshots/{snap_b['id']}/image?v=deadbeefdead").headers["cache-control"] == "no-cache"
+    client.delete(f"/api/cameras/{b['id']}")

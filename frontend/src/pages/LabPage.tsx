@@ -50,7 +50,7 @@ export default function LabPage() {
   const results = (out?.results ?? []).filter((r) => !r.error);
   const maxMs = Math.max(1, ...results.map((r) => r.ms_median ?? 0));
   const cur: LabResult | undefined = results[sel];
-  const imgSrc = out?.image.snapshot_id ? snapshotUrl(out.image.snapshot_id) : out?.image.data_url ?? null;
+  const imgSrc = out?.image.snapshot_id ? snapshotUrl(out.image.snapshot_id, out.image.sha) : out?.image.data_url ?? null;
 
   return (
     <div className="page">
