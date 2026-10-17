@@ -401,11 +401,6 @@ export default function CameraPage() {
       </div>
 
       {c.last_error && <div className="callout err" style={{ marginBottom: 14 }}><AlertTriangle size={16} /> Last check failed: {c.last_error}</div>}
-      {c.latest?.view_shift && viewSnap == null && (
-        <div className="callout warn" style={{ marginBottom: 14 }}>
-          <AlertTriangle size={16} /> The camera's view changed in the latest image (it may have been panned or zoomed). Alerts are paused for this scan. If the new view is permanent, redraw the zones.
-        </div>
-      )}
 
       <div className="camera-layout">
         <div className="col" style={{ gap: 12, minWidth: 0 }}>
@@ -462,7 +457,6 @@ export default function CameraPage() {
                   <div key={s.id} className={cx("film", (viewSnap ?? c.latest?.id) === s.id && "on")} onClick={() => setViewSnap(s.id === c.latest?.id ? null : s.id)} title={`${s.vehicle_count} vehicles`}>
                     <img src={snapshotUrl(s.id, s.sha)} alt="" loading="lazy" />
                     <div className="t">{fmtTime(s.ts)} · {s.vehicle_count}</div>
-                    {s.view_shift && <AlertTriangle size={13} className="shift" color="#fde047" />}
                   </div>
                 ))}
                 {snaps.data?.length === 0 && <div className="hint">No scans yet. Press “Check now”.</div>}

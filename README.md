@@ -34,7 +34,7 @@ There's no video, so nothing can be tracked frame-to-frame. Instead, every new i
 | **Stationary** | Share of vehicles in the *same spot, looking the same* as in the previous scan minutes ago | Flow: stopped (≥60%) / slow (30–60%) / moving |
 | **Activity** | % of the zone that differs from the learned empty road (median of recent scans) | Traffic level when vehicles are too small to detect |
 | **Change** | % of the zone that changed since the previous scan | Pixel-based flow when vehicles are too small |
-| **View check** | Edge similarity with the previous scan, ignoring vehicles | Detects a PTZ camera being panned or zoomed and pauses alerts |
+| **Scene reset** | Edge similarity with the previous scan, ignoring vehicles | When the scene changes drastically (day→night, camera panned), the learned empty road is re-learned so activity zones don't report false traffic. Alerts are never paused. |
 
 Rules look at the **sequence** of scans ("empty for ≥ 2 scans, then light/moderate/heavy, confirmed for 1 scan"). Scans where a state can't be determined are skipped instead of breaking the sequence, and each rule has a cooldown.
 

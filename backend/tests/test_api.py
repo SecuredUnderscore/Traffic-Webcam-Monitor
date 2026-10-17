@@ -179,3 +179,27 @@ def test_rule_test_button_sends_to_discord(client):
     # Settings-page test path as well.
     assert client.post("/api/settings/test/discord", json={}).json()["result"] == "ok"
     client.delete(f"/api/cameras/{cam['id']}")
+
+
+def test_alerts_still_fire_when_scene_changes_drastically(client):
+    """Day->night (or a panned camera) used to pause alerts; it must not anymore."""
+    import numpy as np
+
+    cam = client.post("/api/cameras", json={"name": "Dusk", "url": "http://cam.test/d.jpg", "enabled": False}).json()
+    zone = client.post(f"/api/cameras/{cam['id']}/zones", json={"name": "NB", "polygon": [[0, 0.3], [0.5, 0.3], [0.5, 1], [0, 1]]}).json()
+    client.post(f"/api/zones/{zone['id']}/rules", json={
+        "kind": "density_change", "channels": [], "params": {"from": ["empty"], "to": ["light", "moderate", "heavy"], "min_prior": 2},
+    })
+    for seed in (70, 71):
+        queue_frame(seed, cars=False)
+        client.post(f"/api/cameras/{cam['id']}/check")
+    # "Night": a much darker, differently-lit frame with traffic.
+    img, dets = with_cars(road(72), QUEUE, seed=1)
+    night = (img * 0.25).astype(np.uint8)
+    cv2.circle(night, (200, 60), 40, (255, 255, 255), -1)
+    FRAMES[:] = [cv2.imencode(".jpg", night)[1].tobytes()]
+    DETS[:] = [dets]
+    r = client.post(f"/api/cameras/{cam['id']}/check").json()
+    assert r["camera"]["latest"]["view_shift"] is True  # scene change detected internally...
+    assert len(r["result"]["events"]) == 1  # ...but the alert still fires
+    client.delete(f"/api/cameras/{cam['id']}")

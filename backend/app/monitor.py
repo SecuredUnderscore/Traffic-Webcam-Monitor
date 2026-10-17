@@ -223,11 +223,7 @@ class Monitor:
                 ))
             s.flush()
 
-            fired: list[int] = []
-            if fa.view_shift:
-                log.info("camera %s view changed (score %.2f); skipping rules", cam_id, fa.view_score or 0)
-            else:
-                fired = self._evaluate_rules(s, cam, zones, fa, snap.id, prev_snapshot_id, now)
+            fired = self._evaluate_rules(s, cam, zones, fa, snap.id, prev_snapshot_id, now)
             s.commit()
             return snap.id, fired
 

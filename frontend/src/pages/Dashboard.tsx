@@ -45,11 +45,6 @@ function CameraCard({ cam, now }: { cam: Camera; now: number }) {
           <StatusDot status={cam.status} />
           {cam.latest ? timeAgo(cam.latest.ts, now) : "no image"}
         </div>
-        {cam.latest?.view_shift && (
-          <div className="overlay-pill right" style={{ color: "#fde047" }}>
-            <AlertTriangle size={13} /> View changed
-          </div>
-        )}
       </Link>
       <div className="meta">
         <div className="row">
