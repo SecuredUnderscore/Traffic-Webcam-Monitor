@@ -101,12 +101,27 @@ async def send_pushover(client: httpx.AsyncClient, cfg: dict, alert: Alert) -> s
     return "ok"
 
 
+CONFIGURED = {
+    "discord": lambda cfg: bool(cfg.get("discord_webhook_url")),
+    "pushover": lambda cfg: bool(cfg.get("pushover_app_token") and cfg.get("pushover_user_key")),
+}
+SENDERS = {"discord": send_discord, "pushover": send_pushover}
+NO_CHANNELS = "No notification channels are set up. Add a Discord webhook or Pushover keys in Settings."
+
+
 async def deliver(client: httpx.AsyncClient, cfg: dict, alert: Alert, channels: list[str]) -> dict[str, str]:
+    """Send to the rule's channels. Statuses: "ok", "off: …" (set up but switched off), "error: …".
+
+    Channels that were never set up are left out so they don't clutter every alert.
+    """
     out: dict[str, str] = {}
-    if "discord" in channels and cfg.get("discord_enabled"):
-        out["discord"] = await send_discord(client, cfg, alert)
-    if "pushover" in channels and cfg.get("pushover_enabled"):
-        out["pushover"] = await send_pushover(client, cfg, alert)
+    for ch in ("discord", "pushover"):
+        if ch not in channels:
+            continue
+        if cfg.get(f"{ch}_enabled"):
+            out[ch] = await SENDERS[ch](client, cfg, alert)
+        elif CONFIGURED[ch](cfg):
+            out[ch] = "off: switched off in Settings"
     for ch, status in out.items():
         if status != "ok":
             log.warning("%s delivery: %s", ch, status)

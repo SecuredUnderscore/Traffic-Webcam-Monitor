@@ -142,3 +142,20 @@ def test_ids_not_reused_after_delete_and_images_cache_safely(client):
     assert client.get(f"/api/snapshots/{snap_b['id']}/image").headers["cache-control"] == "no-cache"
     assert client.get(f"/api/snapshots/{snap_b['id']}/image?v=deadbeefdead").headers["cache-control"] == "no-cache"
     client.delete(f"/api/cameras/{b['id']}")
+
+
+def test_delivery_reports_switched_off_channels():
+    import asyncio
+
+    from app.notify import Alert, deliver
+
+    async def run(cfg, channels):
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as c:
+            return await deliver(c, cfg, Alert("t", "m"), channels)
+
+    hook = {"discord_webhook_url": "https://discord.test/hook"}
+    assert asyncio.run(run({**hook, "discord_enabled": False}, ["discord", "pushover"])) == {"discord": "off: switched off in Settings"}
+    assert asyncio.run(run({**hook, "discord_enabled": True}, ["discord", "pushover"])) == {"discord": "ok"}
+    # Never set up -> left out entirely; rule not sending to a channel -> left out.
+    assert asyncio.run(run({}, ["discord", "pushover"])) == {}
+    assert asyncio.run(run({**hook, "discord_enabled": True}, ["pushover"])) == {}

@@ -14,8 +14,8 @@ function Delivery({ d }: { d: Record<string, any> }) {
   return (
     <div className="row wrap">
       {entries.map(([k, v]) => (
-        <span key={k} className={cx("chip", v === "ok" ? "m-moving" : k === "note" ? "" : "m-stopped")} title={String(v)}>
-          {k === "note" ? String(v) : `${k}: ${v === "ok" ? "sent" : "failed"}`}
+        <span key={k} className={cx("chip", v === "ok" ? "m-moving" : k === "note" || String(v).startsWith("off") ? "" : "m-stopped")} title={String(v)}>
+          {k === "note" ? String(v) : `${k}: ${v === "ok" ? "sent" : String(v).startsWith("off") ? "off" : "failed"}`}
         </span>
       ))}
     </div>

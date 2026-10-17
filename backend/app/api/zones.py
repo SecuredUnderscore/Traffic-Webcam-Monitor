@@ -7,7 +7,7 @@ from sqlalchemy import select
 from .. import db, rules, settings_store
 from ..analysis import DENSITY_LEVELS, MOTION_STATES
 from ..monitor import monitor
-from ..notify import deliver
+from ..notify import NO_CHANNELS, deliver
 from .serialize import observation_dict, rule_dict, zone_dict
 
 router = APIRouter(prefix="/api")
@@ -171,4 +171,4 @@ async def test_rule(rule_id: int):
         channels = r.channels
     cfg = settings_store.get_all()
     alert = await monitor.run_blocking(monitor.build_alert, ev, cfg)
-    return {"delivery": await deliver(monitor.client, cfg, alert, channels) or {"note": "No enabled channels"}}
+    return {"delivery": await deliver(monitor.client, cfg, alert, channels) or {"note": NO_CHANNELS}}

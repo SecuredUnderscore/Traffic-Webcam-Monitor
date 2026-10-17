@@ -18,7 +18,7 @@ from . import annotate, db, rules, settings_store
 from .analysis import HISTORY, CameraMemory, ZoneSpec, analyze, to_work
 from .detector import Detection, pool, run_detection
 from .fetcher import fetch
-from .notify import Alert, deliver
+from .notify import NO_CHANNELS, Alert, deliver
 
 log = logging.getLogger(__name__)
 
@@ -343,7 +343,7 @@ class Monitor:
         delivery = await deliver(self.client, cfg, alert, channels)
         with db.session() as s:
             ev = s.get(db.Event, event_id)
-            ev.delivery = delivery or {"note": "no enabled channels"}
+            ev.delivery = delivery or {"note": NO_CHANNELS}
             s.commit()
 
     # Housekeeping

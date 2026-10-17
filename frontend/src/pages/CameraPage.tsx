@@ -103,9 +103,12 @@ function RulesCard({ zone, onChanged }: { zone: Zone; onChanged: () => void }) {
     setTesting(r.id);
     try {
       const res = await api.testRule(r.id);
+      if (res.delivery.note) return toast(res.delivery.note, "error");
       const entries = Object.entries(res.delivery);
-      const bad = entries.find(([, v]) => v !== "ok" && !String(v).startsWith("No"));
-      toast(entries.map(([k, v]) => `${k}: ${v}`).join(" · ") || "Sent", bad ? "error" : "ok");
+      const label = (ch: string) => (ch === "discord" ? "Discord" : "Pushover");
+      const msg = entries.map(([ch, v]) =>
+        v === "ok" ? `${label(ch)}: sent` : v.startsWith("off") ? `${label(ch)} is switched off in Settings` : `${label(ch)}: ${v}`);
+      toast(msg.join(" · "), entries.every(([, v]) => v === "ok") ? "ok" : "error");
     } catch (e: any) {
       toast(e.message, "error");
     } finally {

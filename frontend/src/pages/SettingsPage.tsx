@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Eye, EyeOff, HardDrive, MessageSquare, Save, ScanSearch, Send, Smartphone } from "lucide-react";
+import { AlertTriangle, Eye, EyeOff, HardDrive, MessageSquare, Save, ScanSearch, Send, Smartphone } from "lucide-react";
 import { api } from "../api";
 import type { Settings } from "../types";
 import { Field, Spinner, Switch, useToast } from "../components/ui";
@@ -35,6 +35,26 @@ export default function SettingsPage() {
   useEffect(() => { if (q.data && !s) setS(q.data); }, [q.data, s]);
   if (!s) return <div className="page"><Spinner /></div>;
   const set = (k: string, v: any) => setS({ ...s, [k]: v });
+  // Filling in credentials for the first time switches the channel on; that's what people expect.
+  const setCred = (k: string, v: string, channel: "discord" | "pushover") => {
+    const next = { ...s, [k]: v };
+    const ready = channel === "discord" ? !!next.discord_webhook_url : !!(next.pushover_app_token && next.pushover_user_key);
+    const wasReady = channel === "discord" ? !!s.discord_webhook_url : !!(s.pushover_app_token && s.pushover_user_key);
+    if (ready && !wasReady) next[`${channel}_enabled`] = true;
+    setS(next);
+  };
+  const offWarning = (channel: "discord" | "pushover") => {
+    const ready = channel === "discord" ? !!s.discord_webhook_url : !!(s.pushover_app_token && s.pushover_user_key);
+    return ready && !s[`${channel}_enabled`] ? (
+      <div className="callout warn"><AlertTriangle size={16} /> Switched off: rule alerts won't be sent to {channel === "discord" ? "Discord" : "Pushover"}. Turn on the switch above and Save.</div>
+    ) : null;
+  };
+  const enabledSwitch = (channel: "discord" | "pushover") => (
+    <label className="check small">
+      {s[`${channel}_enabled`] ? "On" : "Off"}
+      <Switch checked={s[`${channel}_enabled`]} onChange={(v) => set(`${channel}_enabled`, v)} />
+    </label>
+  );
   const dirty = JSON.stringify(s) !== JSON.stringify(q.data);
 
   const save = async () => {
@@ -74,10 +94,11 @@ export default function SettingsPage() {
         <Section
           icon={<MessageSquare size={16} />}
           title="Discord"
-          right={<Switch checked={s.discord_enabled} onChange={(v) => set("discord_enabled", v)} />}
+          right={enabledSwitch("discord")}
         >
+          {offWarning("discord")}
           <Field label="Webhook URL" hint="Discord channel → Edit Channel → Integrations → Webhooks → New Webhook → Copy URL. Alerts include the annotated image, plus the previous scan if enabled below.">
-            <Secret value={s.discord_webhook_url} onChange={(v) => set("discord_webhook_url", v)} placeholder="https://discord.com/api/webhooks/…" />
+            <Secret value={s.discord_webhook_url} onChange={(v) => setCred("discord_webhook_url", v, "discord")} placeholder="https://discord.com/api/webhooks/…" />
           </Field>
           <div className="form-grid">
             <Field label="Bot name"><input className="input" value={s.discord_username} onChange={(e) => set("discord_username", e.target.value)} /></Field>
@@ -91,14 +112,15 @@ export default function SettingsPage() {
         <Section
           icon={<Smartphone size={16} />}
           title="Pushover"
-          right={<Switch checked={s.pushover_enabled} onChange={(v) => set("pushover_enabled", v)} />}
+          right={enabledSwitch("pushover")}
         >
+          {offWarning("pushover")}
           <div className="form-grid">
             <Field label="Application API token" hint="Create an application at pushover.net/apps/build">
-              <Secret value={s.pushover_app_token} onChange={(v) => set("pushover_app_token", v)} />
+              <Secret value={s.pushover_app_token} onChange={(v) => setCred("pushover_app_token", v, "pushover")} />
             </Field>
             <Field label="User or group key" hint="Shown on your pushover.net dashboard">
-              <Secret value={s.pushover_user_key} onChange={(v) => set("pushover_user_key", v)} />
+              <Secret value={s.pushover_user_key} onChange={(v) => setCred("pushover_user_key", v, "pushover")} />
             </Field>
             <Field label="Priority">
               <select className="select" value={s.pushover_priority} onChange={(e) => set("pushover_priority", Number(e.target.value))}>
