@@ -330,7 +330,7 @@ class Monitor:
         return Alert(
             title=ev.title, message=ev.message, color=zone.color if zone else "#38bdf8", fields=fields,
             now_image=now_img, before_image=before_img, combined_image=combined,
-            url=f"{base}/events?event={ev.id}" if base else None, ts=ev.ts,
+            url=f"{base}/events?event={ev.id}" if base and ev.id else None, ts=ev.ts or utcnow(),
         )
 
     async def _notify(self, event_id: int) -> None:

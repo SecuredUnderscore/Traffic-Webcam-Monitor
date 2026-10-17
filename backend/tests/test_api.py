@@ -159,3 +159,23 @@ def test_delivery_reports_switched_off_channels():
     # Never set up -> left out entirely; rule not sending to a channel -> left out.
     assert asyncio.run(run({}, ["discord", "pushover"])) == {}
     assert asyncio.run(run({**hook, "discord_enabled": True}, ["pushover"])) == {}
+
+
+def test_rule_test_button_sends_to_discord(client):
+    """The rule's test button builds an unsaved event; it must still deliver with images."""
+    queue_frame(60, cars=True)
+    cam = client.post("/api/cameras", json={"name": "T", "url": "http://cam.test/t.jpg", "enabled": False}).json()
+    client.post(f"/api/cameras/{cam['id']}/check")
+    zone = client.post(f"/api/cameras/{cam['id']}/zones", json={"name": "SB", "polygon": [[0, 0.3], [0.5, 0.3], [0.5, 1], [0, 1]]}).json()
+    rule = client.post(f"/api/zones/{zone['id']}/rules", json={
+        "kind": "motion_change", "channels": ["discord"], "params": {"from": ["stopped"], "to": ["moving"]},
+    }).json()
+    client.put("/api/settings", json={"discord_enabled": True, "discord_webhook_url": "https://discord.test/hook"})
+    sent_before = len(SENT)
+    r = client.post(f"/api/rules/{rule['id']}/test")
+    assert r.status_code == 200, r.text
+    assert r.json()["delivery"] == {"discord": "ok"}
+    assert len(SENT) == sent_before + 1 and b'filename="now.jpg"' in SENT[-1].content
+    # Settings-page test path as well.
+    assert client.post("/api/settings/test/discord", json={}).json()["result"] == "ok"
+    client.delete(f"/api/cameras/{cam['id']}")

@@ -162,8 +162,9 @@ async def test_rule(rule_id: int):
         snaps = list(s.scalars(
             select(db.Snapshot.id).where(db.Snapshot.camera_id == cam.id).order_by(db.Snapshot.ts.desc()).limit(2)
         ))
+        # Never saved, so column defaults (like ts) don't apply; set them explicitly.
         ev = db.Event(
-            camera_id=cam.id, zone_id=z.id, rule_id=r.id,
+            ts=db.utcnow(), camera_id=cam.id, zone_id=z.id, rule_id=r.id,
             title=f"[TEST] {cam.name} · {z.name}: {r.name or r.kind}",
             message="This is a test alert. Real alerts show the state change that triggered them.",
             snapshot_id=snaps[0] if snaps else None, prev_snapshot_id=snaps[1] if len(snaps) > 1 else None,
