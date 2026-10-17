@@ -1,3 +1,5 @@
+name: trafficwatch
+
 services:
   trafficwatch:
     build: .
@@ -11,3 +13,4 @@ services:
 
 volumes:
   trafficwatch-data:
+    name: trafficwatch-data

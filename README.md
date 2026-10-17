@@ -19,6 +19,14 @@ docker compose up -d --build
 
 Open **http://localhost:8080**. The first build takes a few minutes because it downloads and converts the detection models. Data (database, scan images) lives in the `trafficwatch-data` Docker volume.
 
+### Docker Desktop (Windows / macOS)
+
+Run the commands above once from PowerShell or Terminal in the cloned folder (Docker Desktop must be running). After that, TrafficWatch appears in Docker Desktop under **Containers → trafficwatch** with Start/Stop buttons. It starts automatically whenever Docker Desktop starts (`restart: unless-stopped`), and your cameras and settings survive restarts and updates.
+
+To update to a newer version: `git pull` then `docker compose up -d --build` again.
+
+> **WSL users:** if `docker` inside your WSL distro talks to a separate Docker Engine installed in Linux (not Docker Desktop), containers you start there won't show up in Docker Desktop. Run the commands from PowerShell instead, or enable *Settings → Resources → WSL integration* for your distro in Docker Desktop.
+
 1. **Add camera**: paste the image URL (e.g. `https://images.wsdot.wa.gov/nw/405vc00229.jpg`), press **Test**, then pick how often to check.
 2. **Draw zones** on the camera page with **Box** or **Polygon**, one per direction (NB lanes, SB lanes…), or press **Auto-detect lanes**.
 3. **Add rules** to a zone from presets (*Traffic returns*, *Starts moving*, *Becomes stopped*, *Goes empty*, *Heavy traffic*) or build your own.
