@@ -1,0 +1,15 @@
+# Usage: docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build
+# Then pick "NVIDIA GPU (CUDA)" under Settings → Vehicle detection.
+services:
+  trafficwatch:
+    build:
+      context: .
+      dockerfile: Dockerfile.gpu
+    image: trafficwatch:gpu
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

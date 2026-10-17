@@ -1,0 +1,13 @@
+services:
+  trafficwatch:
+    build: .
+    image: trafficwatch:latest
+    container_name: trafficwatch
+    ports:
+      - "8080:8080"
+    volumes:
+      - trafficwatch-data:/data
+    restart: unless-stopped
+
+volumes:
+  trafficwatch-data:
