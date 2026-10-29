@@ -138,6 +138,17 @@ export interface Meta {
 
 export type Settings = Record<string, any>;
 
+/** Bytes used in the data directory. effective_limit is lower than limit when the disk is smaller. */
+export interface Storage {
+  used: number;
+  limit: number;
+  effective_limit: number;
+  snapshots: number;
+  database: number;
+  other: number;
+  disk_free: number;
+}
+
 export interface SuggestedZone {
   polygon: Point[];
   name: string;

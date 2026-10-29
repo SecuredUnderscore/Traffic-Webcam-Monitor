@@ -8,6 +8,7 @@ import type {
   Rule,
   Settings,
   Snapshot,
+  Storage,
   SuggestedZone,
   TrafficEvent,
   Zone,
@@ -52,6 +53,7 @@ export const api = {
   testChannel: (ch: "discord" | "pushover", s: Settings) =>
     req<{ result: string }>("POST", `/api/settings/test/${ch}`, s),
   cleanup: () => req<Record<string, number>>("POST", "/api/maintenance/cleanup"),
+  storage: () => req<Storage>("GET", "/api/storage"),
 
   cameras: () => req<Camera[]>("GET", "/api/cameras"),
   camera: (id: number) => req<Camera>("GET", `/api/cameras/${id}`),

@@ -8,7 +8,7 @@ import numpy as np
 from fastapi import APIRouter
 from sqlalchemy import select
 
-from .. import __version__, annotate, db, settings_store
+from .. import __version__, annotate, db, settings_store, storage
 from ..detector import available_devices, list_models
 from ..monitor import monitor
 from ..notify import Alert, send_discord, send_pushover
@@ -22,8 +22,17 @@ def get_settings():
 
 
 @router.put("/settings")
-def put_settings(body: dict):
-    return settings_store.update(body)
+async def put_settings(body: dict):
+    before = settings_store.get("storage_limit_mb")
+    saved = settings_store.update(body)
+    if saved["storage_limit_mb"] < before:
+        await monitor.run_blocking(storage.enforce, True)
+    return saved
+
+
+@router.get("/storage")
+async def get_storage():
+    return await monitor.run_blocking(storage.usage)
 
 
 @router.get("/meta")
@@ -56,7 +65,7 @@ def _sample_image() -> tuple[bytes, bytes | None]:
         if now:
             return now, before
     img = np.full((360, 640, 3), 40, np.uint8)
-    cv2.putText(img, "TrafficWatch test alert", (90, 190), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255, 255, 255), 2, cv2.LINE_AA)
+    cv2.putText(img, "Traffic Webcam Monitor test alert", (52, 190), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), 2, cv2.LINE_AA)
     return annotate.jpeg(img), None
 
 
@@ -69,7 +78,7 @@ def _test_alert(cfg: dict) -> Alert:
         combined = annotate.jpeg(annotate.side_by_side(a, b), 80)
     base = (cfg.get("app_base_url") or "").rstrip("/")
     return Alert(
-        title="TrafficWatch test notification",
+        title="Traffic Webcam Monitor test notification",
         message="If you can see this (and the images), notifications are set up correctly.",
         fields=[("Vehicles", "12"), ("Density", "heavy"), ("Flow", "stopped")],
         now_image=now, before_image=before if cfg.get("send_before_image") else None, combined_image=combined,

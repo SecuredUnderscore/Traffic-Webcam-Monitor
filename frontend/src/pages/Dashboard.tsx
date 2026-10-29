@@ -115,7 +115,7 @@ export default function Dashboard() {
         <div className="card empty-state">
           <CameraIcon size={20} />
           <h2>No cameras yet</h2>
-          <p>Add a link to a traffic camera's still image. TrafficWatch checks it on your schedule and alerts you when traffic in a zone changes.</p>
+          <p>Add a link to a traffic camera's still image. Traffic Webcam Monitor checks it on your schedule and alerts you when traffic in a zone changes.</p>
           <button className="btn primary" onClick={() => setAdding(true)}><Plus size={16} /> Add camera</button>
         </div>
       )}

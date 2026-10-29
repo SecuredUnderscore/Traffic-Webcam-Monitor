@@ -65,7 +65,7 @@ export default function App() {
     <div className="app">
       <aside className="sidebar">
         <div className="brand">
-          <TrafficCone size={18} /> TrafficWatch
+          <TrafficCone size={18} /> Traffic Webcam Monitor
         </div>
         {links}
         {!!cams.data?.length && <div className="sidebar-heading">Cameras</div>}

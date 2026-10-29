@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import os
+
 from . import db
 
 DEFAULTS: dict[str, object] = {
     # Discord
     "discord_enabled": False,
     "discord_webhook_url": "",
-    "discord_username": "TrafficWatch",
+    "discord_username": "Traffic Webcam Monitor",
     "discord_mention": "",
     # Pushover
     "pushover_enabled": False,
@@ -28,7 +30,11 @@ DEFAULTS: dict[str, object] = {
     # Housekeeping
     "retention_hours": 72,
     "event_retention_days": 30,
+    # Cap on everything stored in the data directory; hosting plans often have small disks.
+    "storage_limit_mb": int(os.environ.get("TW_STORAGE_LIMIT_MB", 400)),
 }
+
+MIN_STORAGE_LIMIT_MB = 50
 
 SECRET_KEYS = {"discord_webhook_url", "pushover_app_token", "pushover_user_key"}
 
@@ -58,6 +64,8 @@ def update(values: dict[str, object]) -> dict[str, object]:
                 value = float(value)
             elif isinstance(default, str):
                 value = "" if value is None else str(value).strip()
+            if key == "storage_limit_mb":
+                value = max(MIN_STORAGE_LIMIT_MB, value)
             row = s.get(db.Setting, key)
             if row is None:
                 s.add(db.Setting(key=key, value=value))

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Eye, EyeOff, HardDrive, MessageSquare, Save, ScanSearch, Send, Smartphone } from "lucide-react";
 import { api } from "../api";
-import type { Settings } from "../types";
+import type { Settings, Storage } from "../types";
 import { Field, Spinner, Switch, useToast } from "../components/ui";
 
 function Secret({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
@@ -11,6 +11,27 @@ function Secret({ value, onChange, placeholder }: { value: string; onChange: (v:
     <div className="row">
       <input className="input mono" type={show ? "text" : "password"} value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} autoComplete="off" />
       <button className="btn icon ghost" onClick={() => setShow(!show)} title={show ? "Hide" : "Show"}>{show ? <EyeOff size={15} /> : <Eye size={15} />}</button>
+    </div>
+  );
+}
+
+const mb = (bytes: number) => `${Math.round(bytes / 1024 / 1024)} MB`;
+
+function StorageMeter({ u }: { u: Storage }) {
+  const limit = u.effective_limit || 1;
+  const pct = Math.min(100, (u.used / limit) * 100);
+  return (
+    <div className="col" style={{ gap: 8 }}>
+      <div className="row">
+        <span className="grow"><strong>{mb(u.used)}</strong> of {mb(u.effective_limit)} used</span>
+        <span className="hint">Scan images {mb(u.snapshots)} · Database {mb(u.database)}{u.other >= 1024 * 1024 ? ` · Other ${mb(u.other)}` : ""}</span>
+      </div>
+      <div className="meter" role="meter" aria-valuemin={0} aria-valuemax={limit} aria-valuenow={u.used} aria-label="Storage used">
+        <span className={pct >= 90 ? "full" : ""} style={{ width: `${pct}%` }} />
+      </div>
+      {u.effective_limit < u.limit && (
+        <div className="callout warn"><AlertTriangle size={16} /> The disk only has room for about {mb(u.effective_limit)}, so the app stays under that instead of {mb(u.limit)}.</div>
+      )}
     </div>
   );
 }
@@ -29,6 +50,7 @@ export default function SettingsPage() {
   const toast = useToast();
   const q = useQuery({ queryKey: ["settings"], queryFn: api.settings });
   const meta = useQuery({ queryKey: ["meta"], queryFn: api.meta });
+  const storage = useQuery({ queryKey: ["storage"], queryFn: api.storage, refetchInterval: 60_000 });
   const [s, setS] = useState<Settings | null>(null);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState<string | null>(null);
@@ -63,6 +85,7 @@ export default function SettingsPage() {
       const saved = await api.saveSettings(s);
       qc.setQueryData(["settings"], saved);
       setS(saved);
+      qc.invalidateQueries({ queryKey: ["storage"] });
       toast("Settings saved", "ok");
     } catch (e: any) {
       toast(e.message, "error");
@@ -144,7 +167,7 @@ export default function SettingsPage() {
 
         <Section icon={<Send size={16} />} title="Alert content">
           <label className="check"><input type="checkbox" checked={s.send_before_image} onChange={(e) => set("send_before_image", e.target.checked)} /> Include the previous scan as a “before” image</label>
-          <Field label="TrafficWatch address (optional)" hint="If set, alerts link back to the event, e.g. http://192.168.1.20:8080">
+          <Field label="App address (optional)" hint="If set, alerts link back to the event, e.g. http://192.168.1.20:8080">
             <input className="input mono" value={s.app_base_url} placeholder="http://localhost:8080" onChange={(e) => set("app_base_url", e.target.value)} />
           </Field>
         </Section>
@@ -175,6 +198,10 @@ export default function SettingsPage() {
         </Section>
 
         <Section icon={<HardDrive size={16} />} title="Storage">
+          {storage.data && <StorageMeter u={storage.data} />}
+          <Field label="Maximum storage (MB)" hint="Everything the app saves: scan images, alerts and the database. When it fills up, the oldest scan images are deleted first, then the oldest alerts. Set it a little below your host's disk size.">
+            <input className="input" type="number" min={50} step={50} value={s.storage_limit_mb} onChange={(e) => set("storage_limit_mb", Number(e.target.value))} />
+          </Field>
           <div className="form-grid">
             <Field label="Keep scan images for" hint="Images attached to alerts are kept with the alert.">
               <select className="select" value={s.retention_hours} onChange={(e) => set("retention_hours", Number(e.target.value))}>
@@ -188,7 +215,7 @@ export default function SettingsPage() {
             </Field>
           </div>
           <div>
-            <button className="btn" onClick={async () => { const r = await api.cleanup(); toast(`Removed ${r.snapshots_deleted} old scans, ${r.events_deleted} old alerts`, "ok"); }}>Run cleanup now</button>
+            <button className="btn" onClick={async () => { const r = await api.cleanup(); qc.invalidateQueries({ queryKey: ["storage"] }); toast(`Removed ${r.snapshots_deleted} old scans, ${r.events_deleted} old alerts`, "ok"); }}>Run cleanup now</button>
           </div>
         </Section>
       </div>

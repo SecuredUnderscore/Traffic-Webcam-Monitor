@@ -42,7 +42,7 @@ async def send_discord(client: httpx.AsyncClient, cfg: dict, alert: Alert) -> st
         "color": _color_int(alert.color),
         "timestamp": alert.ts.isoformat(),
         "fields": [{"name": k[:256], "value": v[:1024] or "-", "inline": True} for k, v in alert.fields][:25],
-        "footer": {"text": "TrafficWatch"},
+        "footer": {"text": "Traffic Webcam Monitor"},
     }
     if alert.url:
         embed["url"] = alert.url
@@ -55,7 +55,7 @@ async def send_discord(client: httpx.AsyncClient, cfg: dict, alert: Alert) -> st
         embeds.append({"title": "Previous scan", "color": 0x64748B, "image": {"url": "attachment://before.jpg"}})
         files.append(("files[1]", ("before.jpg", alert.before_image, "image/jpeg")))
     payload = {
-        "username": cfg.get("discord_username") or "TrafficWatch",
+        "username": cfg.get("discord_username") or "Traffic Webcam Monitor",
         "content": cfg.get("discord_mention") or None,
         "embeds": embeds,
         "allowed_mentions": {"parse": ["roles", "users", "everyone"]},
@@ -89,7 +89,7 @@ async def send_pushover(client: httpx.AsyncClient, cfg: dict, alert: Alert) -> s
         # Emergency priority requires retry/expire.
         data["retry"], data["expire"] = "60", "1800"
     if alert.url:
-        data["url"], data["url_title"] = alert.url, "Open in TrafficWatch"
+        data["url"], data["url_title"] = alert.url, "Open in Traffic Webcam Monitor"
     image = alert.combined_image or alert.now_image
     files = {"attachment": ("alert.jpg", image, "image/jpeg")} if image and len(image) < 5_000_000 else None
     try:

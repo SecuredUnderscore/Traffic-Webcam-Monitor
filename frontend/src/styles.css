@@ -290,6 +290,9 @@ input[type="range"] { accent-color: var(--primary); width: 100%; }
 .table tr.clickable { cursor: pointer; }
 .table tr.clickable:hover td { background: var(--surface-hover); }
 .table tr.on td { background: var(--primary-soft); }
+.meter { height: 8px; border-radius: 4px; background: var(--surface-hover); border: 1px solid var(--border); overflow: hidden; }
+.meter > span { display: block; height: 100%; background: var(--primary); transition: width 200ms ease; }
+.meter > span.full { background: var(--warn); }
 .bar { height: 6px; border-radius: 2px; background: var(--primary); min-width: 2px; }
 
 /* Modal */

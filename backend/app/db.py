@@ -10,6 +10,7 @@ from sqlalchemy.types import TypeDecorator
 
 DATA_DIR = Path(os.environ.get("TW_DATA_DIR", "/data"))
 SNAPSHOT_DIR = DATA_DIR / "snapshots"
+DB_NAME = "traffic-webcam-monitor.db"
 
 
 def utcnow() -> datetime:
@@ -175,7 +176,7 @@ def init_db(path: Path | None = None) -> None:
     global engine, SessionLocal
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
-    db_path = path or DATA_DIR / "trafficwatch.db"
+    db_path = path or DATA_DIR / DB_NAME
     engine = create_engine(f"sqlite:///{db_path}", connect_args={"check_same_thread": False, "timeout": 30})
 
     @event.listens_for(engine, "connect")
@@ -185,9 +186,18 @@ def init_db(path: Path | None = None) -> None:
         cur.execute("PRAGMA foreign_keys=ON")
         cur.close()
 
+    _enable_incremental_vacuum(engine)
     Base.metadata.create_all(engine)
     _migrate_autoincrement(engine)
     SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
+
+
+def _enable_incremental_vacuum(eng) -> None:
+    """Lets the storage limiter shrink the database file after deleting rows."""
+    with eng.connect() as conn:
+        if conn.exec_driver_sql("PRAGMA auto_vacuum").scalar() != 2:
+            conn.exec_driver_sql("PRAGMA auto_vacuum=INCREMENTAL")
+            conn.exec_driver_sql("VACUUM")
 
 
 def _migrate_autoincrement(eng) -> None:

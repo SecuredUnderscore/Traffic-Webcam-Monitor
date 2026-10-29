@@ -1,4 +1,4 @@
-# TrafficWatch: CPU image (default). See Dockerfile.gpu for NVIDIA GPU support.
+# Traffic Webcam Monitor: CPU image (default). See Dockerfile.gpu for NVIDIA GPU support.
 
 # 1. Export the YOLO detectors to ONNX so the runtime image needs no PyTorch.
 FROM python:3.12-slim AS models
@@ -27,7 +27,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/app ./app
 COPY --from=models /models ./models
 COPY --from=ui /ui/dist ./static
-VOLUME /data
+LABEL org.opencontainers.image.title="Traffic Webcam Monitor" \
+      org.opencontainers.image.description="Traffic-camera change detection with Discord/Pushover alerts" \
+      org.opencontainers.image.source="https://github.com/SecuredUnderscore/Traffic-Webcam-Monitor" \
+      org.opencontainers.image.licenses="AGPL-3.0"
+# Mount a volume at /data to keep cameras and settings across updates. (No VOLUME line: Railway rejects it.)
 EXPOSE 8080
-HEALTHCHECK --interval=30s --timeout=5s CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/health')"
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+HEALTHCHECK --interval=30s --timeout=5s CMD python -c "import os, urllib.request; urllib.request.urlopen('http://localhost:%s/api/health' % os.environ.get('PORT', '8080'))"
+# Hosts like Railway choose the port through $PORT.
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}"]

@@ -26,7 +26,7 @@ async def lifespan(_: FastAPI):
     await monitor.stop()
 
 
-app = FastAPI(title="TrafficWatch", lifespan=lifespan)
+app = FastAPI(title="Traffic Webcam Monitor", lifespan=lifespan)
 for r in (cameras.router, zones.router, events.router, settings.router, lab.router):
     app.include_router(r)
 

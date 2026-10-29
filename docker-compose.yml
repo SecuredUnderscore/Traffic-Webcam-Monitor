@@ -1,16 +1,19 @@
-name: trafficwatch
+name: traffic-webcam-monitor
 
 services:
-  trafficwatch:
+  traffic-webcam-monitor:
+    # `docker compose up -d` pulls the published image; add `--build` to build from this folder instead.
+    image: jaxonbjornson/traffic-webcam-monitor:latest
     build: .
-    image: trafficwatch:latest
-    container_name: trafficwatch
+    container_name: traffic-webcam-monitor
     ports:
       - "8080:8080"
     volumes:
-      - trafficwatch-data:/data
+      - traffic-webcam-monitor-data:/data
+    # environment:
+    #   TW_STORAGE_LIMIT_MB: "400"   # starting storage cap; can also be changed in Settings
     restart: unless-stopped
 
 volumes:
-  trafficwatch-data:
-    name: trafficwatch-data
+  traffic-webcam-monitor-data:
+    name: traffic-webcam-monitor-data

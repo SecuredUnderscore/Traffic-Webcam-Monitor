@@ -12,7 +12,7 @@ import cv2
 import httpx
 import numpy as np
 
-DEFAULT_UA = "Mozilla/5.0 (X11; Linux x86_64) TrafficWatch/1.0"
+DEFAULT_UA = "Mozilla/5.0 (X11; Linux x86_64) TrafficWebcamMonitor/1.0"
 
 
 @dataclass

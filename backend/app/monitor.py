@@ -14,7 +14,7 @@ import httpx
 import numpy as np
 from sqlalchemy import select
 
-from . import annotate, db, rules, settings_store
+from . import annotate, db, rules, settings_store, storage
 from .analysis import HISTORY, CameraMemory, ZoneSpec, analyze, to_work
 from .detector import Detection, pool, run_detection
 from .fetcher import fetch
@@ -211,6 +211,7 @@ class Monitor:
             s.flush()
             path = folder / f"{snap.id}.jpg"
             path.write_bytes(data)
+            storage.note_written(len(data))
             snap.path = str(path)
             prev_snapshot_id = cam.last_snapshot_id
             cam.last_snapshot_id = snap.id
@@ -225,7 +226,8 @@ class Monitor:
 
             fired = self._evaluate_rules(s, cam, zones, fa, snap.id, prev_snapshot_id, now)
             s.commit()
-            return snap.id, fired
+        storage.enforce()
+        return snap.id, fired
 
     def _evaluate_rules(self, s, cam: db.Camera, zones: list[db.Zone], fa, snap_id: int,
                         prev_snapshot_id: int | None, now: datetime) -> list[int]:
@@ -378,7 +380,12 @@ class Monitor:
             for i in range(0, len(ids), 500):
                 s.query(db.Snapshot).filter(db.Snapshot.id.in_(ids[i:i + 500])).delete(synchronize_session=False)
             s.commit()
-        return {"events_deleted": n_events, "snapshots_deleted": len(ids), "files_deleted": removed_files}
+        capped = storage.enforce(force=True)
+        return {
+            "events_deleted": n_events + capped["events_deleted"],
+            "snapshots_deleted": len(ids) + capped["snapshots_deleted"],
+            "files_deleted": removed_files + capped["snapshots_deleted"],
+        }
 
     # Status helpers
 
